@@ -17,12 +17,14 @@ import be.nabu.eai.repository.RepositoryThreadFactory;
 import be.nabu.eai.repository.api.Repository;
 import be.nabu.eai.repository.artifacts.jaxb.JAXBArtifact;
 import be.nabu.eai.repository.util.SystemPrincipal;
+import be.nabu.libs.artifacts.api.CacheableArtifact;
 import be.nabu.libs.artifacts.api.StartableArtifact;
 import be.nabu.libs.artifacts.api.StoppableArtifact;
 import be.nabu.libs.cache.api.Cache;
 import be.nabu.libs.cache.impl.AccessBasedTimeoutManager;
 import be.nabu.libs.cache.impl.SerializableSerializer;
 import be.nabu.libs.cache.impl.StringSerializer;
+import be.nabu.libs.cache.memory.MemoryCache;
 import be.nabu.libs.http.api.HTTPResponse;
 import be.nabu.libs.http.api.client.HTTPClient;
 import be.nabu.libs.http.core.DefaultHTTPRequest;
@@ -45,7 +47,7 @@ import be.nabu.utils.mime.impl.PlainMimeEmptyPart;
 import be.nabu.utils.security.BCSecurityUtils;
 import nabu.protocols.http.client.Services;
 
-public class JWKArtifact extends JAXBArtifact<JWKConfiguration> implements StartableArtifact, StoppableArtifact {
+public class JWKArtifact extends JAXBArtifact<JWKConfiguration> implements StartableArtifact, StoppableArtifact, CacheableArtifact {
 	
 	private Logger logger = LoggerFactory.getLogger(getClass());
 	
@@ -303,12 +305,14 @@ public class JWKArtifact extends JAXBArtifact<JWKConfiguration> implements Start
 	public void start() throws IOException {
 		started = true;
 		AccessBasedTimeoutManager timeoutManager = new AccessBasedTimeoutManager(30l*24*60*60*1000);
+
 		if (getConfiguration().getCacheProvider() != null) {
 			cache = getConfiguration().getCacheProvider().create(getId(), 0, 0, new StringSerializer(), new SerializableSerializer(), null, timeoutManager);		
 		}
-//		else {
-//			cache = new MemoryCache(null, timeoutManager);
-//		}
+		else {
+			cache = new MemoryCache(null, timeoutManager);
+		}
+
 		// need the correct context for deserializing
 		RepositoryThreadFactory repositoryThreadFactory = new RepositoryThreadFactory(getRepository());
 		thread = repositoryThreadFactory.newThread(new Runnable() {
@@ -345,6 +349,13 @@ public class JWKArtifact extends JAXBArtifact<JWKConfiguration> implements Start
 	public void stop() throws IOException {
 		started = false;
 		cache = null;
+	}
+
+	@Override
+	public void resetCache() throws IOException {
+		if (cache != null) {
+			cache.clear();
+		}
 	}
 
 }
