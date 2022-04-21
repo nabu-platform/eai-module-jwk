@@ -23,7 +23,6 @@ import be.nabu.libs.cache.api.Cache;
 import be.nabu.libs.cache.impl.AccessBasedTimeoutManager;
 import be.nabu.libs.cache.impl.SerializableSerializer;
 import be.nabu.libs.cache.impl.StringSerializer;
-import be.nabu.libs.cache.memory.MemoryCache;
 import be.nabu.libs.http.api.HTTPResponse;
 import be.nabu.libs.http.api.client.HTTPClient;
 import be.nabu.libs.http.core.DefaultHTTPRequest;
@@ -86,7 +85,7 @@ public class JWKArtifact extends JAXBArtifact<JWKConfiguration> implements Start
 
 	// spec: https://datatracker.ietf.org/doc/html/rfc7517#page-6
 	// note that if anything goes wrong (apart from cache storage), we will still store an empty entry with a timeout so we will try again later
-	@SuppressWarnings("unused")
+	@SuppressWarnings({ "unused", "rawtypes", "unchecked" })
 	public JWKEntry loadJWK(URI uri, boolean force) throws IOException {
 		JWKEntry entry = cache == null ? null : (JWKEntry) cache.get(uri.toASCIIString());
 		if (!force && entry != null) {
