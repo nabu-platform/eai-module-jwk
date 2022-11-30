@@ -120,7 +120,16 @@ public class JWKArtifact extends JAXBArtifact<JWKConfiguration> implements Start
 			try {
 				if ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())) {
 					HTTPClient client = Services.getTransactionable(getRepository().newExecutionContext(SystemPrincipal.ROOT), null, getConfig().getHttpClient()).getClient();
-					DefaultHTTPRequest request = new DefaultHTTPRequest("GET", uri.getPath(), new PlainMimeEmptyPart(null, 
+					
+					String path = uri.getPath();
+					if (uri.getQuery() != null) {
+						path += "?" + uri.getQuery();
+					}
+					if (uri.getFragment() != null) {
+						path += "#" + uri.getFragment();
+					}
+					
+					DefaultHTTPRequest request = new DefaultHTTPRequest("GET", path, new PlainMimeEmptyPart(null, 
 							new MimeHeader("Content-Length", "0"),
 							new MimeHeader("Host", uri.getHost())));
 					HTTPResponse response = client.execute(request, null, "https".equalsIgnoreCase(uri.getScheme()), true);
@@ -178,8 +187,6 @@ public class JWKArtifact extends JAXBArtifact<JWKConfiguration> implements Start
 				logger.warn("Could not read JWK url: " + uri, e);
 			}
 			
-			logger.info("expires1: " + expires);
-			
 			// we don't want expires in the past, we allow minimal leeway for slow responses etc at _very_ inopportune times or system clock synchronization
 			// this still leaves a gap if a system would always respond with an expiry date max 1 min in the past, but that means the target system is doing very funky stuff
 			if (!getConfig().isAllowExpiryInPast() && expires != null && expires.before(new Date(new Date().getTime() - 1l*60*1000))) {
@@ -188,10 +195,9 @@ public class JWKArtifact extends JAXBArtifact<JWKConfiguration> implements Start
 			
 			if (expires == null) {
 				Duration minimumRefreshDuration = getConfig().getMinimumRefreshDuration();
-				expires = new Date(new Date().getTime() + (minimumRefreshDuration == null ? 1000l * 60 * 60 * 60 : 1000l * minimumRefreshDuration.toSeconds())); 
+				expires = new Date(new Date().getTime() + (minimumRefreshDuration == null ? 1000l * 60 * 60 : 1000l * minimumRefreshDuration.toSeconds())); 
 			}
 			
-			logger.info("expires2: " + expires);
 			entry.setExpires(expires);
 			Map<String, PublicKey> keyMap = new HashMap<String, PublicKey>();
 			entry.setKeys(keyMap);
