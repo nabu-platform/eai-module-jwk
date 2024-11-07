@@ -24,6 +24,11 @@
 	</build>
 	<dependencies>
 		<dependency>
+			<groupId>be.nabu.libs.http</groupId>
+			<artifactId>http-jwt</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>be.nabu.eai</groupId>
 			<artifactId>eai-developer</artifactId>
 			<scope>provided</scope>
